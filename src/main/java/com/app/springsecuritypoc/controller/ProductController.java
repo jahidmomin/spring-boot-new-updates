@@ -1,15 +1,18 @@
 package com.app.springsecuritypoc.controller;
 
 import com.app.springsecuritypoc.dto.Product;
+import com.app.springsecuritypoc.entity.UserInfo;
+import com.app.springsecuritypoc.entity.UserInfoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
+@RequestMapping("/products")
 public class ProductController {
 
     @GetMapping("/welcome")
@@ -35,7 +38,7 @@ public class ProductController {
         return products;
     }
 
-    @GetMapping("/product/{id}")
+    @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_USER')")
     public Product getProductById(@PathVariable() int id) {
         Product product = new Product();
@@ -44,6 +47,16 @@ public class ProductController {
         return product;
     }
 
+    @Autowired
+    private UserInfoRepository userInfoRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @PostMapping("/new")
+    public UserInfo create(@RequestBody UserInfo userInfo) {
+        userInfo.setPassword(passwordEncoder.encode(userInfo.getPassword()));
+        return userInfoRepository.save(userInfo);
+    }
 
 
 }

@@ -3,6 +3,7 @@ package com.app.springsecuritypoc.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,7 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
+  /*  @Bean
     public UserDetailsService authentication(PasswordEncoder passwordEncoder) {
 
         UserDetails admin = User.withUsername("admin").password(passwordEncoder.encode("12345")).roles("ADMIN").build();
@@ -27,14 +28,25 @@ public class SecurityConfig {
 
         //InMemoryUserDetailsManager internally implements UserDetailsServiceManager implements UserDetailsService
         return new InMemoryUserDetailsManager(admin, user);
+    }*/
+
+    @Bean
+    public UserDetailsService authentication() {
+        //custom out impl to provide db users not hard coded users.
+        return new UserInfoUserDetailsService();
     }
 
     @Bean
     public SecurityFilterChain authorization(HttpSecurity http) throws Exception {
-        return http.cors().disable().csrf().disable().authorizeHttpRequests()
-                .requestMatchers("/welcome").permitAll()
-                .anyRequest().authenticated()
-                .and().formLogin().and().build();
+        http.csrf().disable()
+                .authorizeHttpRequests()
+                .requestMatchers("/products/welcome", "/products/new").permitAll()
+                .and()
+                .authorizeHttpRequests().anyRequest().authenticated()
+                .and()
+                .formLogin();
+
+        return http.build();
     }
 
     @Bean
@@ -42,4 +54,12 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        //it will internally call userDetailsService load method and perform that logic
+        provider.setUserDetailsService(authentication());
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
 }
